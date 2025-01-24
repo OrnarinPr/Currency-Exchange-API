@@ -50,3 +50,7 @@ INSERT IGNORE INTO supported_currencies (currency_code, currency_name) VALUES
 INSERT IGNORE INTO api_keys (key_value, user_role) VALUES
 ('test_admin_key', 'Admin'),
 ('test_user_key', 'User');
+
+GRANT ALL PRIVILEGES ON currency_exchange.* TO 'app_user'@'%' IDENTIFIED BY 'app_password';
+FLUSH PRIVILEGES;
+

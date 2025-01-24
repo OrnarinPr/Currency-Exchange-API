@@ -1,14 +1,21 @@
 version: '3.8'
 
+networks:
+  currency_network:
+    driver: bridge
+
 services:
   api:
     build: .
+    container_name: currency_exchange_api
     ports:
       - "5000:5000"
     depends_on:
       - mysql
       - redis
       - rabbitmq
+    networks:
+      - currency_network
     environment:
       FLASK_ENV: production
       MYSQL_HOST: mysql
@@ -24,13 +31,15 @@ services:
   mysql:
     image: mysql:latest
     container_name: currency_mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - currency_network
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: currency_exchange
       MYSQL_USER: app_user
       MYSQL_PASSWORD: app_password
-    ports:
-      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -40,13 +49,17 @@ services:
     container_name: currency_redis
     ports:
       - "6379:6379"
+    networks:
+      - currency_network
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: currency_rabbitmq
     ports:
-      - "5672:5672"       
-      - "15672:15672"     
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - currency_network
 
   celery:
     build: .
@@ -54,6 +67,8 @@ services:
     depends_on:
       - rabbitmq
       - redis
+    networks:
+      - currency_network
     environment:
       FLASK_ENV: production
       MYSQL_HOST: mysql
