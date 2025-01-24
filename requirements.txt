@@ -1,0 +1,11 @@
+Werkzeug
+mysql-connector-python
+Flask-Limiter
+requests
+redis
+flask
+gunicorn
+python-dotenv
+celery
+
+

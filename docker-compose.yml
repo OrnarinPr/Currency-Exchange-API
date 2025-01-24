@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    environment:
+      FLASK_ENV: production
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: currency_exchange
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    command: gunicorn -w 4 -b 0.0.0.0:5000 src.app:app
+
+  mysql:
+    image: mysql:latest
+    container_name: currency_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: currency_exchange
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:latest
+    container_name: currency_redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: currency_rabbitmq
+    ports:
+      - "5672:5672"       
+      - "15672:15672"     
+
+  celery:
+    build: .
+    container_name: currency_celery_worker
+    depends_on:
+      - rabbitmq
+      - redis
+    environment:
+      FLASK_ENV: production
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: currency_exchange
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    command: celery -A src.app.celery worker --loglevel=info
+
+volumes:
+  db_data:
